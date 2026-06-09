@@ -5,7 +5,7 @@
 #define ROWS 3
 #define COLUMNS 3
 
-const int OFFSETS[] = {1};
+const int OFFSETS[] = {0, 0};
 
 int x = 0;
 int y = 0;
@@ -14,7 +14,7 @@ int xOffset = 0;
 int yOffset = OFFSETS[0];
 
 bool player = 0;
-int p1Index[2] = {0, 0};
+int playerIndex[2] = {0, 0};
 
 typedef enum {EMPTY, PLACED, HIT, MISS} cellValue;
 
@@ -50,10 +50,10 @@ void GetDirections() {
     else direction = REST;
 }
 
-void UpdateBoard() {
+void UpdateBoard(int board) {
 
     for (int i = 0; i <= xOffset; i++) {
-        for (int j = 0; j <= yOffset; j++) lights[player][y + j][x + i].cursor = false;
+        for (int j = 0; j <= yOffset; j++) lights[board][y + j][x + i].cursor = false;
     }
 
     if (direction == UP && y > 0) y--;
@@ -62,37 +62,66 @@ void UpdateBoard() {
     else if (direction == RIGHT && x < COLUMNS - 1 - xOffset) x++;
 
     for (int i = 0; i <= xOffset; i++) {
-        for (int j = 0; j <= yOffset; j++) lights[player][y + j][x + i].cursor = true;
+        for (int j = 0; j <= yOffset; j++) lights[board][y + j][x + i].cursor = true;
     }
 }
 
-
 void UpdateLights1() {
-    gpio_put(2, lights[player][0][0].cursor || lights[player][0][0].value);
-    gpio_put(3, lights[player][0][1].cursor || lights[player][0][1].value);
-    gpio_put(4, lights[player][0][2].cursor || lights[player][0][2].value);
+    gpio_put(2, lights[player][0][0].cursor || lights[player][0][0].value == PLACED);
+    gpio_put(3, lights[player][0][1].cursor || lights[player][0][1].value == PLACED);
+    gpio_put(4, lights[player][0][2].cursor || lights[player][0][2].value == PLACED);
 
-    gpio_put(5, lights[player][1][0].cursor || lights[player][1][0].value);
-    gpio_put(6, lights[player][1][1].cursor || lights[player][1][1].value);
-    gpio_put(7, lights[player][1][2].cursor || lights[player][1][2].value);
+    gpio_put(5, lights[player][1][0].cursor || lights[player][1][0].value == PLACED);
+    gpio_put(6, lights[player][1][1].cursor || lights[player][1][1].value == PLACED);
+    gpio_put(7, lights[player][1][2].cursor || lights[player][1][2].value == PLACED);
 
-    gpio_put(8, lights[player][2][0].cursor || lights[player][2][0].value);
-    gpio_put(9, lights[player][2][1].cursor || lights[player][2][1].value);
-    gpio_put(10, lights[player][2][2].cursor || lights[player][2][2].value);
+    gpio_put(8, lights[player][2][0].cursor || lights[player][2][0].value == PLACED);
+    gpio_put(9, lights[player][2][1].cursor || lights[player][2][1].value == PLACED);
+    gpio_put(10, lights[player][2][2].cursor || lights[player][2][2].value == PLACED);
 }
 
 void UpdateLights2() {
-    gpio_put(2, lights[player][0][0].cursor);
-    gpio_put(3, lights[player][0][1].cursor);
-    gpio_put(4, lights[player][0][2].cursor);
+    gpio_put(2, lights[!player][0][0].cursor || lights[!player][0][0].value == HIT || lights[!player][0][0].value == MISS);
+    gpio_put(3, lights[!player][0][1].cursor || lights[!player][0][1].value == HIT || lights[!player][0][1].value == MISS);
+    gpio_put(4, lights[!player][0][2].cursor || lights[!player][0][2].value == HIT || lights[!player][0][2].value == MISS);
 
-    gpio_put(5, lights[player][1][0].cursor);
-    gpio_put(6, lights[player][1][1].cursor);
-    gpio_put(7, lights[player][1][2].cursor);
+    gpio_put(5, lights[!player][1][0].cursor || lights[!player][1][0].value == HIT || lights[!player][1][0].value == MISS);
+    gpio_put(6, lights[!player][1][1].cursor || lights[!player][1][1].value == HIT || lights[!player][1][1].value == MISS);
+    gpio_put(7, lights[!player][1][2].cursor || lights[!player][1][2].value == HIT || lights[!player][1][2].value == MISS);
 
-    gpio_put(8, lights[player][2][0].cursor);
-    gpio_put(9, lights[player][2][1].cursor);
-    gpio_put(10, lights[player][2][2].cursor);
+    gpio_put(8, lights[!player][2][0].cursor || lights[!player][2][0].value == HIT || lights[!player][2][0].value == MISS);
+    gpio_put(9, lights[!player][2][1].cursor || lights[!player][2][1].value == HIT || lights[!player][2][1].value == MISS);
+    gpio_put(10, lights[!player][2][2].cursor || lights[!player][2][2].value == HIT || lights[!player][2][2].value == MISS);
+}
+
+// void ResetLights() {
+//     for (int i = 2; i < 11; i++) {
+//         gpio_put(i, 0);
+//     }
+// }
+
+// void ClearCursors() {
+//     for (int i = 0; i < 2; i++) {
+//         for (int j = 0; i < ROWS; i++) {
+//             for (int k = 0; k < COLUMNS; k++) {
+//                 lights[i][j][k].cursor = false;
+//             }
+//         }
+//     }
+// }
+
+void PrintBoard(int board) {
+    printf("\nBoard %d\n", board);
+
+    for (int row = 0; row < ROWS; row++) {
+        for (int col = 0; col < COLUMNS; col++) {
+            printf("(%d,%d) ",
+                lights[board][row][col].value,
+                lights[board][row][col].cursor);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
 
 bool rotate;
@@ -101,6 +130,15 @@ bool place;
 void GetPress() {
     place = gpio_get(21);
     rotate = gpio_get(22);
+}
+
+void ResetCursor() {
+    lights[player][y][x].cursor = false;
+
+    x = 0;
+    y = 0;
+
+
 }
 
 void SetCell() {
@@ -116,12 +154,14 @@ void SetCell() {
         }
     }
 
-    p1Index[player]++;
-    x = 0;
-    y = 0;
+    playerIndex[player]++;
     
-    if(xOffset) xOffset = OFFSETS[p1Index[player]];
-    if(yOffset) yOffset = OFFSETS[p1Index[player]];
+    ResetCursor();
+
+    if (playerIndex[player] >= sizeof(OFFSETS)) {
+        xOffset = 0;
+        yOffset = 0;
+    }
 }
 
 void Attack() {
@@ -140,10 +180,10 @@ void Attack() {
     y = 0;
 }
 
-bool CheckForWinner() {
+bool CheckForWinner(int board) {
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLUMNS; j++) {
-            if (lights[!player][i][j].value == PLACED) return false;
+            if (lights[board][i][j].value == PLACED) return false;
         }
     }
 
@@ -173,8 +213,6 @@ enum playStates {PLAY_START, PLAY_IDLE, PLAY_MOVE, ATTACK, WON} playState;
 
 bool Tick(struct repeating_timer *t) {
 
-
-
     switch (modeState) {
         case MODE_START:
             modeState = WAIT;
@@ -198,7 +236,7 @@ bool Tick(struct repeating_timer *t) {
                 case PLACE_START:
                     xOffset = 0;
                     yOffset = OFFSETS[0];
-                    UpdateBoard();
+                    UpdateBoard(player);
                     placeState = PLACE_IDLE;
                     break;
                 case PLACE_IDLE:
@@ -206,15 +244,15 @@ bool Tick(struct repeating_timer *t) {
                     GetPress();
                     if(direction && !rotate && !place) {
                         placeState = PLACE_MOVE;
-                        UpdateBoard();
+                        UpdateBoard(player);
                     } else if (!direction && rotate && !place) {
                         placeState = ROTATE;
                         RotateShip();
                     } else if (!direction && !rotate && place) {
                         placeState = PLACE;
                         SetCell();
-                        if (p1Index[player] < sizeof(OFFSETS)/sizeof(OFFSETS[0])) UpdateBoard();
-                    } else if (p1Index[player] >= sizeof(OFFSETS)/sizeof(OFFSETS[0])) {                       
+                        if (playerIndex[player] < sizeof(OFFSETS)/sizeof(OFFSETS[0])) UpdateBoard(player);
+                    } else if (playerIndex[player] >= sizeof(OFFSETS)/sizeof(OFFSETS[0])) {                       
                         placeState = READY;
                     }
                     break;
@@ -237,8 +275,17 @@ bool Tick(struct repeating_timer *t) {
                         placeState = PLACE_START;
                         gpio_put(18, 0);
                     } else {
+                        player = 0;
+                        x = 0;
+                        y = 0;
+
+                        //ClearCursors();
+
                         modeState = PLAY;
-                        gpio_put(16, 0);
+
+                        //PrintBoard(0);
+                        UpdateBoard(player);
+                        PrintBoard(1);
                     }
                     break;
                 default:
@@ -248,12 +295,14 @@ bool Tick(struct repeating_timer *t) {
             UpdateLights1();
             break;
         case PLAY:
-            
+            gpio_put(16, player);    
+
             switch(playState) {
                 case PLAY_START:
                     xOffset = 0;
                     yOffset = 0;
-                    UpdateBoard();
+                    UpdateBoard(!player);
+                    UpdateLights2();
                     playState = PLAY_IDLE;
                     break;
                 case PLAY_IDLE:
@@ -261,13 +310,16 @@ bool Tick(struct repeating_timer *t) {
                     GetPress();
                     if(direction && !place) {
                         playState = PLAY_MOVE;
-                        UpdateBoard();
+                        UpdateBoard(!player);
                     } else if (!direction && place) {
-                        playState = ATTACK;
+                        int target = !player;
                         Attack();
-                        
-                        if (CheckForWinner()) {
+
+                        if (CheckForWinner(target)) {
                             playState = WON;
+                        } else {
+                            playState = ATTACK;
+                            player = !player;
                         }
                     }
                     break;
@@ -279,15 +331,14 @@ bool Tick(struct repeating_timer *t) {
                     GetPress();
                     if (!place) {
                         
-                        player = !player;
+                        UpdateBoard(!player);
 
-                        UpdateBoard();
                         playState = PLAY_IDLE;
                     }
                     break;
                 case WON:
                     gpio_put(18, 0);
-                    gpio_put(16, 0);
+                    //gpio_put(16, 0);
                     break;
                 default:
                     playState = PLAY_START;
