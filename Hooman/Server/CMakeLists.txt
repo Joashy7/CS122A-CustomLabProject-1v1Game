@@ -28,35 +28,37 @@ set(PICO_BOARD pico2_w CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(BattleShip C CXX ASM)
+project(battleship-server C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(BattleShip BattleShip.c )
+add_executable(battleship-server battleship-server.c )
 
-pico_set_program_name(BattleShip "BattleShip")
-pico_set_program_version(BattleShip "0.1")
+pico_set_program_name(battleship-server "battleship-server")
+pico_set_program_version(battleship-server "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(BattleShip 0)
-pico_enable_stdio_usb(BattleShip 0)
+pico_enable_stdio_uart(battleship-server 0)
+pico_enable_stdio_usb(battleship-server 1)
 
 # Add the standard library to the build
-target_link_libraries(BattleShip
+target_link_libraries(battleship-server
         pico_stdlib)
 
 # Add the standard include files to the build
-target_include_directories(BattleShip PRIVATE
+target_include_directories(battleship-server PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
 # Add any user requested libraries
-target_link_libraries(BattleShip 
+target_link_libraries(battleship-server 
+        pico_cyw43_arch_lwip_threadsafe_background
+        hardware_gpio    
         hardware_adc
         )
 
-pico_add_extra_outputs(BattleShip)
+pico_add_extra_outputs(battleship-server)
 
